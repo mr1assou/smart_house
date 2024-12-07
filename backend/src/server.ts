@@ -15,13 +15,7 @@ console.log(`[Server]: I am running at https://localhost:${port} `);
 });
 
 const db =ConnectDatabase.createConnection();
-db.query(`CALL showUsers(?)`,[1], (err, results : any) => {
-    if (err) {
-        console.error('Error executing stored procedure:', err);
-    } else {
-        console.log(results[0][0]);
-    }
-});
+
 
 
 
