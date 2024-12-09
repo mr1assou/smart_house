@@ -1,0 +1,11 @@
+# Login request
+POST http://localhost:3000/addUser
+Content-Type: application/json
+
+{
+    "email": "h",
+    "password": "123"
+}
+
+
+

@@ -7,13 +7,12 @@ export class ConnectDatabase {
       if (!this.client) {
         try {
           this.client = createPool({
-            host: '127.0.0.1',
+            host: 'backend-mysql-1',
             port: parseInt('3306'),
             user: 'root',
             password: 'root',
-            database:'players',
+            database:'smart_house',
           });
-          console.log("goooooood");
         } catch (err) {
           console.error('Error creating connection pool:', err);
           throw err; 
