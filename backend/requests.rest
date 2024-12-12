@@ -3,9 +3,15 @@ POST http://localhost:3000/addUser
 Content-Type: application/json
 
 {
-    "email": "h",
-    "password": "123"
+    "email": "g",
+    "password":"g"
 }
+###
+
+GET http://localhost:3000/getUser/1
+Content-Type: application/json
+
+
 
 
 

@@ -1,7 +1,8 @@
-import { ConnectDatabase } from "../dbConnection";
+import { ConnectDatabase } from "../utils/dbConnection";
 import {Pool} from "mysql2";
 import { User } from "../entities/user";
-export class UserRepo {
+
+export class AdminUserRepo {
     private connectionDb: Pool;
     constructor() {
         this.connectionDb = ConnectDatabase.createConnection();
