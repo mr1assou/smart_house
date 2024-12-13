@@ -4,9 +4,9 @@ import { createPool, Pool } from "mysql2";
 export class ConnectDatabase {
     public static client: Pool;
     static createConnection(): Pool {
-      if (!this.client) {
+      if (!ConnectDatabase.client) {
         try {
-          this.client = createPool({
+          ConnectDatabase.client = createPool({
             host: 'backend-mysql-1',
             port: parseInt('3306'),
             user: 'root',
@@ -18,7 +18,7 @@ export class ConnectDatabase {
           throw err; 
         }
       }
-      return this.client;
+      return ConnectDatabase.client;
     }
 }
 

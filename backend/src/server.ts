@@ -2,7 +2,7 @@
 import express, {Express, Request, Response} from 'express';
 import loginRouter from './routes/loginRoute';
 import adminUserRouter from './routes/adminUserRoute';
-
+import lightRouter from './routes/lightRoute';
 const app: Express = express();
 app.use(express.json()); 
 
@@ -15,6 +15,7 @@ app.get('/', (req: Request, res: Response)=>{
 app.listen(port);
 app.use(loginRouter);
 app.use(adminUserRouter);
+app.use(lightRouter);
 
 
 

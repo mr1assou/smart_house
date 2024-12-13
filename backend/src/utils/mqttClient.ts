@@ -1,32 +1,52 @@
-
 // src/utils/mqttClient.ts
-import mqtt from 'mqtt';
+import mqtt from "mqtt";
 
 export class MqttClient {
-    private client: any;
+    public static client: any;
+    private static isConnected = false;
 
-    constructor(brokerUrl: string) {
-        this.client = mqtt.connect(brokerUrl);
+    public static initialize(): void {
+        if (!MqttClient.client) {
+            MqttClient.client = mqtt.connect("mqtt://192.168.8.105:1883");
+            MqttClient.client.on("connect", () => {
+                MqttClient.isConnected = true;
+                console.log("Connected successfully to MQTT broker");
+            });
+            MqttClient.client.on("error", (err: any) => {
+                console.error("MQTT connection error:", err.message);
+            });
+        }
     }
-    
-    async publish(topic: string, message: string): Promise<void> {
-        this.client.publish(topic, message, (err: any) => {
+
+    public static async publish(topic: string, message: string): Promise<void> {
+        if (!MqttClient.isConnected) {
+            console.error("MQTT client not connected. Unable to publish.");
+            return;
+        }
+        MqttClient.client.publish(topic, message, (err: any) => {
             if (err) {
                 console.error("Failed to publish message", err);
+            } else {
+                console.log(`Message published to topic '${topic}': ${message}`);
             }
         });
     }
 
-    subscribe(topic: string, callback: (message: string) => void): void {
-        this.client.subscribe(topic, (err: any) => {
+    public static subscribe(topic: string, callback: (message: string) => void): void {
+        if (!MqttClient.isConnected) {
+            console.error("MQTT client not connected. Unable to subscribe.");
+            return;
+        }
+        MqttClient.client.subscribe(topic, (err: any) => {
             if (err) {
                 console.error("Failed to subscribe to topic", err);
-            }
-        });
-
-        this.client.on('message', (receivedTopic: string, payload: Buffer) => {
-            if (receivedTopic === topic) {
-                callback(payload.toString());
+            } else {
+                console.log(`Subscribed to topic '${topic}'`);
+                MqttClient.client.on("message", (receivedTopic: string, message: Buffer) => {
+                    if (receivedTopic === topic) {
+                        callback(message.toString());
+                    }
+                });
             }
         });
     }

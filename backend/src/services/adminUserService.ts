@@ -9,6 +9,9 @@ export class AdminUserService {
         this.adminUserRepository = adminUserRepository;
     }
     addUser(data:User){ 
+        console.log(data.email);
+        console.log(data.password);
+        console.log(data.role);
         this.adminUserRepository.addUser(data);
     }
 }

@@ -1,10 +1,9 @@
 # Login request
-POST http://localhost:3000/addUser
+POST http://localhost:3000/adjustBrightness
 Content-Type: application/json
 
 {
-    "email": "g",
-    "password":"g"
+    "email": "gggg"
 }
 ###
 
