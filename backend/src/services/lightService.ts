@@ -5,10 +5,10 @@ export class LightService {
     constructor() {
         MqttClient.initialize();
     }
-    public async turnOnLights(): Promise<void> {
-        await MqttClient.publish("lights/on", "Turning on the lights");
+    public async turnOnLights(id:string): Promise<void> {
+        await MqttClient.publish("lights/on", {lightId:id});
     }
-    public async adjustBrightness(): Promise<void> {
-        await MqttClient.publish("adjustBrightness/on", "adjust Brightness");
+    public async turnOffLights(id:string): Promise<void> {
+        await MqttClient.publish("lights/off", {lightId:id});
     }
 }

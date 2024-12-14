@@ -1,6 +1,7 @@
 // src/utils/mqttClient.ts
 import mqtt from "mqtt";
 
+
 export class MqttClient {
     public static client: any;
     private static isConnected = false;
@@ -18,16 +19,17 @@ export class MqttClient {
         }
     }
 
-    public static async publish(topic: string, message: string): Promise<void> {
+    public static async publish(topic: string, message: any): Promise<void> {
+        console.log(message)
         if (!MqttClient.isConnected) {
             console.error("MQTT client not connected. Unable to publish.");
             return;
         }
-        MqttClient.client.publish(topic, message, (err: any) => {
+        MqttClient.client.publish(topic,JSON.stringify(message), (err: any) => {
             if (err) {
                 console.error("Failed to publish message", err);
             } else {
-                console.log(`Message published to topic '${topic}': ${message}`);
+                console.log(`Message published to topic '${topic}': ${JSON.stringify(message)}`);
             }
         });
     }

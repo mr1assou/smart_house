@@ -1,12 +1,14 @@
 # Login request
-POST http://localhost:3000/adjustBrightness
+POST http://localhost:3000/turnOnLights/5
 Content-Type: application/json
 
-{
-    "email": "gggg"
-}
-###
 
+###
+POST http://localhost:3000/turnOffLights/1
+Content-Type: application/json
+
+
+###
 GET http://localhost:3000/getUser/1
 Content-Type: application/json
 
