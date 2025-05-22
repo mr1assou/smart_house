@@ -1,0 +1,72 @@
+services:
+  kafka:
+    image: 'bitnami/kafka:latest'
+    environment:
+      - KAFKA_CFG_NODE_ID=0
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+    ports: ["9092:9092"]
+    volumes:
+      - kafka_data:/bitnami/kafka
+    networks:
+      - kafka-spark-net
+  
+
+  spark-master:
+    image: bitnami/spark:3.4.1
+    ports:
+      - "8080:8080"  # Spark UI
+      - "7077:7077"  # Spark master port
+    networks:
+      - kafka-spark-net
+    environment:
+      - SPARK_MODE=master
+  
+  spark-worker:
+    image: bitnami/spark:3.4.1
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+    volumes:
+      - ./model:/opt/bitnami/spark/model:ro  # Read-only mount for model files
+    networks:
+    - kafka-spark-net
+    depends_on:
+      - spark-master
+
+  express_js:
+    build: ./express_js
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./express_js:/app         # Mount source code
+      - /app/node_modules        # Isolate node_modules
+    networks:
+      - kafka-spark-net
+  
+  spark-driver:
+    image: bitnami/spark:3.4.1
+    volumes:
+      - ./python_app/app.py:/app/app.py  # Mount only the streaming code
+      - ./model:/opt/bitnami/spark/model:ro  # Read-only mount for model files
+    networks:
+      - kafka-spark-net
+    depends_on:
+      - spark-master
+      - kafka
+    command: >
+      sh -c "pip install numpy && /opt/bitnami/spark/bin/spark-submit
+      --master spark://spark-master:7077
+      --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.4.1,org.apache.kafka:kafka-clients:3.4.0
+      --conf spark.jars.packages=org.apache.spark:spark-sql-kafka-0-10_2.12:3.4.1
+      --conf spark.sql.streaming.checkpointLocation=/tmp/checkpoint
+      /app/app.py"
+
+volumes:
+  kafka_data:
+
+networks:
+  kafka-spark-net:
