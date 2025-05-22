@@ -1,8 +1,10 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import from_json, col
+from pyspark.sql.functions import from_json, col, lit
 from pyspark.sql.types import StructType, StructField, FloatType, StringType, IntegerType
 from pyspark.ml.feature import VectorAssembler
 from pyspark.ml.classification import RandomForestClassificationModel
+import requests
+import json
 
 # Schema for incoming sensor data
 SENSOR_SCHEMA = StructType([
@@ -17,6 +19,22 @@ SENSOR_SCHEMA = StructType([
     StructField("population_density", IntegerType()),
     StructField("timestamp", StringType())
 ])
+
+def check_ventilation_status():
+    try:
+        response = requests.get('http://express_js:3000/ventilation/status')
+        return response.json()['status']
+    except Exception as e:
+        print(f"Error checking ventilation status: {str(e)}")
+        return None
+
+def control_ventilation(action):
+    try:
+        endpoint = f'http://express_js:3000/ventilation/{action}'
+        response = requests.post(endpoint)
+        print(f"Ventilation {action.upper()}: {response.json()['message']}")
+    except Exception as e:
+        print(f"Error controlling ventilation: {str(e)}")
 
 if __name__ == "__main__":
     spark = SparkSession.builder \
@@ -66,11 +84,33 @@ if __name__ == "__main__":
         col("prediction")
     )
 
-    # Write prediction results to console
+    # Process each batch of predictions
+    def process_batch(batch_df, batch_id):
+        # Show the table first
+        print("\n" + "="*60)
+        print(f"Batch: {batch_id}")
+        print("="*60)
+        batch_df.show(truncate=False)
+        
+        # Convert to pandas for easier processing
+        pdf = batch_df.toPandas()
+        
+        for _, row in pdf.iterrows():
+            prediction = row['prediction']
+            ventilation_status = check_ventilation_status()
+            
+            if ventilation_status is not None:
+                # Good/Moderate air quality (0 or 1) and ventilation is ON
+                if prediction in [0, 1] and ventilation_status:
+                    control_ventilation('off')
+                # Poor/Bad air quality (2 or 3) and ventilation is OFF
+                elif prediction in [2, 3] and not ventilation_status:
+                    control_ventilation('on')
+
+    # Write prediction results to console and process for ventilation control
     query = output_df.writeStream \
         .outputMode("append") \
-        .format("console") \
-        .option("truncate", "false") \
+        .foreachBatch(process_batch) \
         .start()
 
     query.awaitTermination()

@@ -3,14 +3,33 @@ const { Kafka } = require('kafkajs');
 const app = express();
 const port = 3000;
 
+// Add state variable for ventilation
+let ventilationStatus = false; // false means off, true means on
+
 app.get('/', (req, res) => {
   res.send('Hello guys ');
+});
+
+// Add ventilation control endpoints
+app.post('/ventilation/on', (req, res) => {
+  ventilationStatus = true;
+  console.log('Ventilation turned ON');
+  res.json({ status: 'success', message: 'Ventilation turned ON', currentStatus: ventilationStatus });
+});
+
+app.post('/ventilation/off', (req, res) => {
+  ventilationStatus = false;
+  console.log('Ventilation turned OFF');
+  res.json({ status: 'success', message: 'Ventilation turned OFF', currentStatus: ventilationStatus });
+});
+
+app.get('/ventilation/status', (req, res) => {
+  res.json({ status: ventilationStatus });
 });
 
 app.listen(port, () => {
   console.log(`Hello guys http://localhost:${port}`);
 });
-
 
 const kafka = new Kafka({
   clientId: 'sensor-producer',
@@ -19,12 +38,15 @@ const kafka = new Kafka({
 
 const producer = kafka.producer();
 
-const connectToKafka = async () => {
+// Connect to Kafka once when the application starts
+const initializeKafka = async () => {
   try {
     await producer.connect();
-    console.log('Connected succefully');
+    console.log('Connected to Kafka successfully');
   } catch (error) {
-    console.error('Failed to co', error.message);
+    console.error('Failed to connect to Kafka:', error.message);
+    // Retry connection after 5 seconds
+    setTimeout(initializeKafka, 5000);
   }
 };
 
@@ -48,17 +70,17 @@ const sendSensorData = async () => {
       topic: 'sensor-data',
       messages: [{ value: JSON.stringify(sensorData) }]
     });
-    console.log('📤 Data sent to kafka:', sensorData);
   } catch (err) {
     console.error('❌ Error sending data:', err.message);
+    // If there's an error, try to reconnect
+    if (err.message.includes('not connected')) {
+      await initializeKafka();
+    }
   }
 };
 
-const run = async () => {
-  await connectToKafka();
-  await sendSensorData();
-};
+// Initialize Kafka connection when the application starts
+initializeKafka();
 
-// run();
-
-setInterval(run, 1000);
+// Send data every 10 seconds
+setInterval(sendSensorData, 1000);
